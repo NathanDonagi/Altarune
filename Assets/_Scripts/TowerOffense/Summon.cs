@@ -7,19 +7,15 @@ public abstract class Summon : BaseObject {
     [SerializeField] private DefaultSummonProperties settings;
     [SerializeField] protected float manaDepletion = 1f;
 
-    private readonly Dictionary<Renderer, Material[]> matDict = new();
-    private Player player;
-    public bool active;
+    public Entity Summoner { get; protected set; }
 
-    protected virtual void Awake() {
-        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-        foreach (Renderer renderer in renderers) {
-            matDict[renderer] = renderer.sharedMaterials;
-        }
-    }
+    protected ManaSource manaSource;
+    protected bool active;
 
-    public virtual void Init(Player player) {
-        this.player = player;
+    public virtual void Init(Entity summoner,
+                             ManaSource manaSource) {
+        this.manaSource = manaSource;
+        Summoner = summoner;
         active = true;
     }
 
@@ -29,7 +25,7 @@ public abstract class Summon : BaseObject {
     }
 
     protected virtual void Update() {
-        if (active) player.ManaSource -= Time.deltaTime * manaDepletion;
+        if (active) manaSource.Drain(Time.deltaTime * manaDepletion);
     }
 
     public void DoSpawnAnim() => StartCoroutine(AnimateObjectSpawn());
@@ -61,20 +57,6 @@ public abstract class Summon : BaseObject {
             yield return null;
         }
         Destroy(gameObject, 0.2f);
-    }
-
-    public void ToggleHologram(bool on) {
-        // foreach (KeyValuePair<Renderer, Material[]> kvp in matDict) {
-        //     kvp.Key.sharedMaterials = on ? new Material[] { settings.fadeMaterial } : kvp.Value;
-        // }
-    }
-
-    public void ToggleHologramRed(bool doRed) {
-        foreach (KeyValuePair<Renderer, Material[]> kvp in matDict) {
-            MaterialPropertyBlock mpb = new();
-            if (doRed) mpb.SetColor("_BaseColor", Color.red);
-            kvp.Key.SetPropertyBlock(mpb);
-        }
     }
 
     #if UNITY_EDITOR
